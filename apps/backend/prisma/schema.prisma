@@ -1,0 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Business {
+  id         String   @id @default(cuid())
+  name       String
+  planTier   String   @default("free") // free, pro, enterprise
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  users      User[]
+  locations  Location[]
+  auditLogs  AuditLog[]
+
+  @@map("businesses")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  businessId   String
+  email        String   @unique
+  passwordHash String?
+  role         String   @default("user") // user, admin, owner
+  firstName    String?
+  lastName     String?
+  isActive     Boolean  @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  business    Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  auditLogs   AuditLog[]
+
+  @@map("users")
+}
+
+model Location {
+  id                   String    @id @default(cuid())
+  businessId           String
+  googlePlaceId        String    @unique
+  name                 String
+  address              String
+  latitude             Float?
+  longitude            Float?
+  phoneNumber          String?
+  website              String?
+  oauthRefreshToken    String?   // Encrypted Google OAuth refresh token
+  lastSyncAt           DateTime?
+  isActive             Boolean   @default(true)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  // Relations
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  reviews  Review[]
+
+  @@map("locations")
+}
+
+model Review {
+  id          String    @id @default(cuid())
+  locationId  String
+  googleReviewId String @unique
+  authorName  String
+  authorEmail String?
+  rating      Int       // 1-5 stars
+  text        String?
+  sentiment   String?   // positive, negative, neutral
+  status      String    @default("pending") // pending, approved, escalated, archived
+  isPublished Boolean   @default(false)
+  createdAt   DateTime  @default(now()) // When review was created on Google
+  ingestedAt  DateTime  @default(now()) // When we first ingested this review
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  replies  Reply[]
+
+  @@map("reviews")
+}
+
+model Reply {
+  id           String    @id @default(cuid())
+  reviewId     String
+  voice        String    // polite, casual, professional
+  draftText    String
+  finalText    String?
+  escalate     Boolean   @default(false)
+  published    Boolean   @default(false)
+  publishedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relations
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@map("replies")
+}
+
+model AuditLog {
+  id           String    @id @default(cuid())
+  businessId   String
+  actorUserId  String
+  action       String    // create, update, delete, publish, etc.
+  entityType   String    // user, location, review, reply, etc.
+  entityId     String
+  details      Json?     // Additional context data
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime  @default(now())
+
+  // Relations
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  actor    User     @relation(fields: [actorUserId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
+}
+
