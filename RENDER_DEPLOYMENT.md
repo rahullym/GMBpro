@@ -33,14 +33,13 @@ This guide will help you deploy your GMB Optimizer application to Render.
    - **Name**: `gmb-optimizer-backend`
    - **Root Directory**: `apps/backend`
    - **Environment**: `Node`
-   - **Build Command**: `npm ci --production=false && npm run build:prod`
-   - **Start Command**: `node --max-old-space-size=512 dist/main`
+   - **Build Command**: `npm ci && npm run build`
+   - **Start Command**: `npm run start:prod`
    - **Plan**: Starter (Free)
 
 ### Environment Variables for Backend:
 ```
 NODE_ENV=production
-NODE_OPTIONS=--max-old-space-size=512
 DATABASE_URL=<from PostgreSQL service>
 REDIS_URL=<from Redis service>
 JWT_SECRET=<generate random string>
@@ -53,13 +52,14 @@ FRONTEND_URL=https://gmb-optimizer-frontend.onrender.com
 
 ## 🌐 Step 3: Deploy Frontend Service
 
-1. Go to Render Dashboard → New → Static Site
+1. Go to Render Dashboard → New → Web Service
 2. Connect your GitHub repository
 3. Configure:
    - **Name**: `gmb-optimizer-frontend`
    - **Root Directory**: `apps/frontend`
+   - **Environment**: `Node`
    - **Build Command**: `npm ci && npm run build`
-   - **Publish Directory**: `out`
+   - **Start Command**: `npm start`
    - **Plan**: Starter (Free)
 
 ### Environment Variables for Frontend:
@@ -117,14 +117,10 @@ Update your frontend's API calls to use the production backend URL:
 ## 🔧 Troubleshooting
 
 ### Common Issues:
-1. **Memory Allocation Errors**: 
-   - Use `NODE_OPTIONS=--max-old-space-size=512` environment variable
-   - Use `npm run build:prod` instead of `npm run build`
-   - Consider upgrading to a paid plan for more memory
-2. **Build Failures**: Check build logs in Render dashboard
-3. **Database Connection**: Verify DATABASE_URL format
-4. **OAuth Errors**: Check redirect URIs in Google Console
-5. **CORS Issues**: Verify FRONTEND_URL in backend environment
+1. **Build Failures**: Check build logs in Render dashboard
+2. **Database Connection**: Verify DATABASE_URL format
+3. **OAuth Errors**: Check redirect URIs in Google Console
+4. **CORS Issues**: Verify FRONTEND_URL in backend environment
 
 ### Logs:
 - Backend logs: Render Dashboard → Your Service → Logs
