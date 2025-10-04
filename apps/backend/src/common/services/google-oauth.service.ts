@@ -53,6 +53,7 @@ export class GoogleOAuthService {
       'https://www.googleapis.com/auth/business.manage',
       'https://www.googleapis.com/auth/plus.business.manage',
       'https://www.googleapis.com/auth/business.manage',
+      'https://www.googleapis.com/auth/plus.me',
     ];
 
     return this.oauth2Client.generateAuthUrl({

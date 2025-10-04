@@ -19,7 +19,7 @@ export class EncryptionUtil {
   static encrypt(text: string, key: string): string {
     const keyBuffer = Buffer.from(key, 'hex');
     const iv = crypto.randomBytes(this.ivLength);
-    const cipher = crypto.createCipher(this.algorithm, keyBuffer);
+    const cipher = crypto.createCipheriv(this.algorithm, keyBuffer, iv);
     cipher.setAAD(Buffer.from('gmb-optimizer', 'utf8'));
 
     let encrypted = cipher.update(text, 'utf8', 'hex');
@@ -45,7 +45,7 @@ export class EncryptionUtil {
     );
     const encrypted = encryptedText.slice((this.ivLength + this.tagLength) * 2);
 
-    const decipher = crypto.createDecipher(this.algorithm, keyBuffer);
+    const decipher = crypto.createDecipheriv(this.algorithm, keyBuffer, iv);
     decipher.setAAD(Buffer.from('gmb-optimizer', 'utf8'));
     decipher.setAuthTag(tag);
 
@@ -62,4 +62,3 @@ export class EncryptionUtil {
     return crypto.createHash('sha256').update(text).digest('hex');
   }
 }
-

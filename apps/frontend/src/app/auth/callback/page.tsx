@@ -10,6 +10,12 @@ export default function AuthCallbackPage() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
+    if (!searchParams) {
+      setStatus('error');
+      setMessage('Invalid callback parameters');
+      return;
+    }
+
     const accessToken = searchParams.get('accessToken');
     const refreshToken = searchParams.get('refreshToken');
     const user = searchParams.get('user');

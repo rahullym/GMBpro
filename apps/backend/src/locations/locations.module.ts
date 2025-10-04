@@ -5,6 +5,7 @@ import { LocationsController } from './locations.controller';
 import { LocationsGmbController } from './locations-gmb.controller';
 import { PrismaService } from '../database/prisma.service';
 import { GoogleBusinessProfileService } from '../common/services/google-business-profile.service';
+import { GoogleOAuthService } from '../common/services/google-oauth.service';
 import { AuthModule } from '../auth/auth.module';
 import { AuditLogsModule } from '../audit-logs/audit-logs.module';
 
@@ -17,7 +18,7 @@ import { AuditLogsModule } from '../audit-logs/audit-logs.module';
     }),
   ],
   controllers: [LocationsController, LocationsGmbController],
-  providers: [LocationsService, PrismaService, GoogleBusinessProfileService],
+  providers: [LocationsService, PrismaService, GoogleBusinessProfileService, GoogleOAuthService],
   exports: [LocationsService],
 })
 export class LocationsModule {}

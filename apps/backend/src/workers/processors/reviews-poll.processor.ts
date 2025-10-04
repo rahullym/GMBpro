@@ -4,12 +4,14 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { GoogleBusinessProfileService } from '../../common/services/google-business-profile.service';
 
 @Injectable()
 @Processor('reviews.poll')
 export class ReviewsPollProcessor extends WorkerHost {
   constructor(
     private prisma: PrismaService,
+    private googleBusinessProfileService: GoogleBusinessProfileService,
     @InjectQueue('reviews.process') private reviewsProcessQueue: Queue,
   ) {
     super();
@@ -30,33 +32,36 @@ export class ReviewsPollProcessor extends WorkerHost {
         throw new Error('Location not found or not connected to Google Business Profile');
       }
 
-      // In a real implementation, you would:
-      // 1. Use the OAuth refresh token to get a new access token
-      // 2. Call Google Business Profile API to fetch reviews
-      // 3. Process the response and create jobs for review processing
+      // Validate refresh token
+      const isValid = await this.googleBusinessProfileService.validateRefreshToken(location.oauthRefreshToken);
+      if (!isValid) {
+        console.error(`Invalid refresh token for location ${locationId}`);
+        // Mark location as disconnected
+        await this.prisma.location.update({
+          where: { id: locationId },
+          data: { oauthRefreshToken: null },
+        });
+        throw new Error('Invalid refresh token - location disconnected');
+      }
 
-      // Mock implementation - simulate fetching reviews
-      const mockReviews = [
-        {
-          googleReviewId: `review_${Date.now()}_1`,
-          authorName: 'John Doe',
-          authorEmail: 'john@example.com',
-          rating: 5,
-          text: 'Great service! Highly recommend.',
-          createdAt: new Date(),
-        },
-        {
-          googleReviewId: `review_${Date.now()}_2`,
-          authorName: 'Jane Smith',
-          authorEmail: 'jane@example.com',
-          rating: 3,
-          text: 'Good food but service was slow.',
-          createdAt: new Date(),
-        },
-      ];
+      // Fetch reviews from Google Business Profile API
+      const googleReviews = await this.googleBusinessProfileService.getLocationReviews(
+        location.oauthRefreshToken,
+        location.googlePlaceId,
+      );
 
       // Create jobs to process each review
-      for (const reviewData of mockReviews) {
+      for (const googleReview of googleReviews) {
+        const reviewData = {
+          googleReviewId: googleReview.reviewId,
+          authorName: googleReview.reviewer.displayName,
+          authorEmail: '', // Google doesn't provide email in reviews
+          rating: this.mapGoogleRating(googleReview.starRating),
+          text: googleReview.comment || '',
+          createdAt: new Date(googleReview.createTime),
+          reviewReply: googleReview.reviewReply,
+        };
+
         await this.reviewsProcessQueue.add('process-review', {
           reviewData,
           locationId,
@@ -71,13 +76,24 @@ export class ReviewsPollProcessor extends WorkerHost {
         data: { lastSyncAt: new Date() },
       });
 
-      console.log(`Successfully polled ${mockReviews.length} reviews for location ${locationId}`);
+      console.log(`Successfully polled ${googleReviews.length} reviews for location ${locationId}`);
       
-      return { processed: mockReviews.length };
+      return { processed: googleReviews.length };
     } catch (error) {
       console.error(`Error polling reviews for location ${locationId}:`, error);
       throw error;
     }
+  }
+
+  private mapGoogleRating(googleRating: string): number {
+    const ratingMap = {
+      'ONE': 1,
+      'TWO': 2,
+      'THREE': 3,
+      'FOUR': 4,
+      'FIVE': 5,
+    };
+    return ratingMap[googleRating] || 5;
   }
 }
 

@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 export default function AuthErrorPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const message = searchParams.get('message') || 'An error occurred during authentication';
+  const message = searchParams?.get('message') || 'An error occurred during authentication';
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

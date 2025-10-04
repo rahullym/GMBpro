@@ -15,7 +15,7 @@ import {
 export default function ReviewDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const reviewId = params.id as string;
+  const reviewId = params?.id as string;
   
   const [review, setReview] = useState<Review | null>(null);
   const [replies, setReplies] = useState<Reply[]>([]);

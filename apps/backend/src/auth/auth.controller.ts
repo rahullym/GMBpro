@@ -31,6 +31,7 @@ export class AuthController {
   @ApiQuery({ name: 'state', required: false, description: 'State parameter for OAuth flow' })
   async googleAuth(@Query('state') state: string, @Res() res: Response) {
     const googleAuthUrl = this.authService.getGoogleAuthUrl(state);
+    console.log(googleAuthUrl,'console.log');
     return res.redirect(googleAuthUrl);
   }
 
